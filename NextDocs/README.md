@@ -109,6 +109,36 @@ Both assistants will:
 
 ---
 
+## Updating
+
+To update an existing installation with the latest files:
+
+**Global:**
+
+```bash
+# Mac/Linux/Git Bash
+t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" "$t" && bash "$t/NextDocs/scripts/update.sh" --global && rm -rf "$t"
+```
+
+```powershell
+# Windows
+$t="$env:TEMP\nd-$(Get-Random)"; git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" $t; & "$t\NextDocs\scripts\update.ps1" -Global; Remove-Item -Recurse -Force $t
+```
+
+**Per-Project:**
+
+```bash
+# Mac/Linux/Git Bash
+t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" "$t" && bash "$t/NextDocs/scripts/update.sh" && rm -rf "$t"
+```
+
+```powershell
+# Windows
+$t="$env:TEMP\nd-$(Get-Random)"; git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" $t; & "$t\NextDocs\scripts\update.ps1"; Remove-Item -Recurse -Force $t
+```
+
+---
+
 ## Manual Installation
 
 ### Claude Code (Global)
@@ -153,6 +183,8 @@ When creating or modifying documentation, read and follow the conventions in `.g
 | `copilot-instructions.md` | Small reference snippet for Copilot |
 | `scripts/install.ps1` | Windows installer |
 | `scripts/install.sh` | Mac/Linux installer |
+| `scripts/update.ps1` | Windows updater |
+| `scripts/update.sh` | Mac/Linux updater |
 
 ---
 
