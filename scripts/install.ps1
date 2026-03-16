@@ -2,6 +2,7 @@
 # Installs slash command for Claude Code + instructions for GitHub Copilot
 
 param(
+    [switch]$Global,
     [string]$Target = (Get-Location).Path
 )
 
@@ -18,32 +19,58 @@ Write-Host "NextDocs AI Skills Installer" -ForegroundColor Cyan
 Write-Host "============================" -ForegroundColor Cyan
 Write-Host ""
 
-# Install Claude Code slash command
-if (Test-Path $ClaudeSource) {
-    $ClaudeDir = Join-Path $Target ".claude\commands"
-    $ClaudeTarget = Join-Path $ClaudeDir "nextdocs.md"
+if ($Global) {
+    Write-Host "Mode: Global (all projects)" -ForegroundColor Magenta
+    Write-Host ""
 
-    if (-not (Test-Path $ClaudeDir)) {
-        New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
+    # Install Claude Code slash command globally
+    if (Test-Path $ClaudeSource) {
+        $ClaudeDir = Join-Path $env:USERPROFILE ".claude\commands"
+        $ClaudeTarget = Join-Path $ClaudeDir "nextdocs.md"
+
+        if (-not (Test-Path $ClaudeDir)) {
+            New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
+        }
+
+        Write-Host "[Claude Code] Installing globally to ~/.claude/commands/..." -ForegroundColor Yellow
+        Copy-Item -Path $ClaudeSource -Destination $ClaudeTarget -Force
+        Write-Host "[Claude Code] Done - Available in all projects" -ForegroundColor Green
     }
 
-    Write-Host "[Claude Code] Installing /nextdocs command..." -ForegroundColor Yellow
-    Copy-Item -Path $ClaudeSource -Destination $ClaudeTarget -Force
-    Write-Host "[Claude Code] Done" -ForegroundColor Green
-}
+    Write-Host ""
+    Write-Host "[Copilot] Skipped - Copilot requires per-project installation" -ForegroundColor DarkGray
 
-# Install GitHub Copilot instructions
-if (Test-Path $CopilotSource) {
-    $CopilotDir = Join-Path $Target ".github"
-    $CopilotTarget = Join-Path $CopilotDir "copilot-instructions.md"
+} else {
+    Write-Host "Mode: Per-project" -ForegroundColor Magenta
+    Write-Host ""
 
-    if (-not (Test-Path $CopilotDir)) {
-        New-Item -ItemType Directory -Path $CopilotDir -Force | Out-Null
+    # Install Claude Code slash command
+    if (Test-Path $ClaudeSource) {
+        $ClaudeDir = Join-Path $Target ".claude\commands"
+        $ClaudeTarget = Join-Path $ClaudeDir "nextdocs.md"
+
+        if (-not (Test-Path $ClaudeDir)) {
+            New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
+        }
+
+        Write-Host "[Claude Code] Installing /nextdocs command..." -ForegroundColor Yellow
+        Copy-Item -Path $ClaudeSource -Destination $ClaudeTarget -Force
+        Write-Host "[Claude Code] Done" -ForegroundColor Green
     }
 
-    Write-Host "[Copilot] Installing instructions..." -ForegroundColor Yellow
-    Copy-Item -Path $CopilotSource -Destination $CopilotTarget -Force
-    Write-Host "[Copilot] Done" -ForegroundColor Green
+    # Install GitHub Copilot instructions
+    if (Test-Path $CopilotSource) {
+        $CopilotDir = Join-Path $Target ".github"
+        $CopilotTarget = Join-Path $CopilotDir "copilot-instructions.md"
+
+        if (-not (Test-Path $CopilotDir)) {
+            New-Item -ItemType Directory -Path $CopilotDir -Force | Out-Null
+        }
+
+        Write-Host "[Copilot] Installing instructions..." -ForegroundColor Yellow
+        Copy-Item -Path $CopilotSource -Destination $CopilotTarget -Force
+        Write-Host "[Copilot] Done" -ForegroundColor Green
+    }
 }
 
 Write-Host ""
@@ -51,5 +78,7 @@ Write-Host "Installation complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Usage:" -ForegroundColor Cyan
 Write-Host "  Claude Code: Type /nextdocs"
-Write-Host "  Copilot:     Ask 'help me create documentation'"
+if (-not $Global) {
+    Write-Host "  Copilot:     Ask 'help me create documentation'"
+}
 Write-Host ""

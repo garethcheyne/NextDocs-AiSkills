@@ -17,34 +17,64 @@ AI assistant skills for creating documentation following NextDocs conventions.
 
 ---
 
-## Quick Install
+## Installation Options
 
-Run from your project directory:
+### Option 1: Global Install (Recommended)
 
-### Windows (PowerShell)
+Install once, available in **all projects**.
+
+#### Windows (PowerShell)
+
+```powershell
+$t="$env:TEMP\nd-$(Get-Random)"; git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" $t; & "$t\scripts\install.ps1" -Global; Remove-Item -Recurse -Force $t
+```
+
+#### Mac/Linux/Git Bash
+
+```bash
+t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" "$t" && bash "$t/scripts/install.sh" --global && rm -rf "$t"
+```
+
+#### What it installs
+
+| Tool | Location | Scope |
+|------|----------|-------|
+| Claude Code | `~/.claude/commands/nextdocs.md` | All projects |
+
+> **Note:** GitHub Copilot doesn't support global instructions - use per-project install for Copilot.
+
+---
+
+### Option 2: Per-Project Install
+
+Install in a specific project only.
+
+#### Windows (PowerShell)
 
 ```powershell
 $t="$env:TEMP\nd-$(Get-Random)"; git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" $t; & "$t\scripts\install.ps1"; Remove-Item -Recurse -Force $t
 ```
 
-### Mac/Linux/Git Bash
+#### Mac/Linux/Git Bash
 
 ```bash
 t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" "$t" && bash "$t/scripts/install.sh" && rm -rf "$t"
 ```
 
-### What it installs
+#### What it installs
 
-| File | Location |
+| Tool | Location |
 |------|----------|
-| Claude Code slash command | `.claude/commands/nextdocs.md` |
-| Copilot instructions | `.github/copilot-instructions.md` |
+| Claude Code | `.claude/commands/nextdocs.md` |
+| GitHub Copilot | `.github/copilot-instructions.md` |
 
 ---
 
 ## Usage
 
 ### Claude Code
+
+Type the slash command:
 
 ```
 /nextdocs
@@ -67,18 +97,32 @@ Both assistants will:
 
 ## Manual Installation
 
-### Claude Code
+### Claude Code (Global)
+
+```bash
+# Mac/Linux
+mkdir -p ~/.claude/commands
+curl -o ~/.claude/commands/nextdocs.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/nextdocs.md
+```
+
+```powershell
+# Windows
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\commands"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/nextdocs.md" -OutFile "$env:USERPROFILE\.claude\commands\nextdocs.md"
+```
+
+### Claude Code (Per-Project)
 
 ```bash
 mkdir -p .claude/commands
-cp nextdocs.md .claude/commands/
+curl -o .claude/commands/nextdocs.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/nextdocs.md
 ```
 
-### GitHub Copilot
+### GitHub Copilot (Per-Project Only)
 
 ```bash
 mkdir -p .github
-cp copilot-instructions.md .github/
+curl -o .github/copilot-instructions.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/copilot-instructions.md
 ```
 
 ---
