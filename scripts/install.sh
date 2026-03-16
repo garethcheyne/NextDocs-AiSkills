@@ -1,51 +1,55 @@
 #!/bin/bash
-# NextDocs Slash Command Installer
-# Just copies nextdocs.md to .claude/commands/
+# NextDocs AI Skills Installer
+# Installs slash command for Claude Code + instructions for GitHub Copilot
 
 set -e
 
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
-RED='\033[0;31m'
 NC='\033[0m'
 
-# Target directory (default: current directory)
 TARGET="${1:-$(pwd)}"
 
-# Find source file
+# Find source files
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SOURCE_FILE="$(dirname "$SCRIPT_DIR")/nextdocs.md"
-
-# Target paths
-TARGET_DIR="$TARGET/.claude/commands"
-TARGET_FILE="$TARGET_DIR/nextdocs.md"
+REPO_ROOT="$(dirname "$SCRIPT_DIR")"
+CLAUDE_SOURCE="$REPO_ROOT/nextdocs.md"
+COPILOT_SOURCE="$REPO_ROOT/copilot-instructions.md"
 
 echo ""
-echo -e "${CYAN}NextDocs Slash Command Installer${NC}"
-echo -e "${CYAN}=================================${NC}"
+echo -e "${CYAN}NextDocs AI Skills Installer${NC}"
+echo -e "${CYAN}============================${NC}"
 echo ""
 
-# Check source exists
-if [ ! -f "$SOURCE_FILE" ]; then
-    echo -e "${RED}Error: nextdocs.md not found${NC}"
-    exit 1
+# Install Claude Code slash command
+if [ -f "$CLAUDE_SOURCE" ]; then
+    CLAUDE_DIR="$TARGET/.claude/commands"
+    CLAUDE_TARGET="$CLAUDE_DIR/nextdocs.md"
+
+    mkdir -p "$CLAUDE_DIR"
+
+    echo -e "${YELLOW}[Claude Code] Installing /nextdocs command...${NC}"
+    cp "$CLAUDE_SOURCE" "$CLAUDE_TARGET"
+    echo -e "${GREEN}[Claude Code] Done${NC}"
 fi
 
-# Create directory if needed
-if [ ! -d "$TARGET_DIR" ]; then
-    echo -e "${YELLOW}Creating .claude/commands/...${NC}"
-    mkdir -p "$TARGET_DIR"
+# Install GitHub Copilot instructions
+if [ -f "$COPILOT_SOURCE" ]; then
+    COPILOT_DIR="$TARGET/.github"
+    COPILOT_TARGET="$COPILOT_DIR/copilot-instructions.md"
+
+    mkdir -p "$COPILOT_DIR"
+
+    echo -e "${YELLOW}[Copilot] Installing instructions...${NC}"
+    cp "$COPILOT_SOURCE" "$COPILOT_TARGET"
+    echo -e "${GREEN}[Copilot] Done${NC}"
 fi
 
-# Copy file
-echo -e "${YELLOW}Installing slash command...${NC}"
-cp "$SOURCE_FILE" "$TARGET_FILE"
-
 echo ""
-echo -e "${GREEN}Done!${NC}"
+echo -e "${GREEN}Installation complete!${NC}"
 echo ""
 echo -e "${CYAN}Usage:${NC}"
-echo "  1. Restart Claude Code"
-echo "  2. Type: /nextdocs"
+echo "  Claude Code: Type /nextdocs"
+echo "  Copilot:     Ask 'help me create documentation'"
 echo ""

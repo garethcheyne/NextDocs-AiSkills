@@ -1,8 +1,19 @@
-# NextDocs Documentation Skill
+# NextDocs AI Skills
 
-A slash command for Claude Code that helps create documentation following NextDocs conventions.
+AI assistant skills for creating documentation following NextDocs conventions.
 
-**No server. No dependencies. Just a markdown file.**
+**Works with Claude Code and GitHub Copilot.**
+
+**No server. No dependencies. Just markdown files.**
+
+---
+
+## Supported Tools
+
+| Tool | How It Works |
+|------|--------------|
+| **Claude Code** | `/nextdocs` slash command |
+| **GitHub Copilot** | `.github/copilot-instructions.md` |
 
 ---
 
@@ -22,23 +33,31 @@ $t="$env:TEMP\nd-$(Get-Random)"; git clone --depth 1 "https://github.com/garethc
 t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" "$t" && bash "$t/scripts/install.sh" && rm -rf "$t"
 ```
 
-### What it does
+### What it installs
 
-1. Creates `.claude/commands/` in your project (if needed)
-2. Copies `nextdocs.md` slash command
-3. That's it!
+| File | Location |
+|------|----------|
+| Claude Code slash command | `.claude/commands/nextdocs.md` |
+| Copilot instructions | `.github/copilot-instructions.md` |
 
 ---
 
 ## Usage
 
-After installation, restart Claude Code and type:
+### Claude Code
 
 ```
 /nextdocs
 ```
 
-The assistant will:
+### GitHub Copilot
+
+Just ask naturally:
+- "Help me create documentation for this project"
+- "Set up NextDocs documentation"
+- "Document this API"
+
+Both assistants will:
 1. Ask where to put documentation
 2. Analyze your project
 3. Propose a documentation structure
@@ -48,11 +67,18 @@ The assistant will:
 
 ## Manual Installation
 
-Just copy `nextdocs.md` to `.claude/commands/nextdocs.md` in your project.
+### Claude Code
 
 ```bash
 mkdir -p .claude/commands
 cp nextdocs.md .claude/commands/
+```
+
+### GitHub Copilot
+
+```bash
+mkdir -p .github
+cp copilot-instructions.md .github/
 ```
 
 ---
@@ -61,8 +87,9 @@ cp nextdocs.md .claude/commands/
 
 | File | Purpose |
 |------|---------|
-| `nextdocs.md` | The slash command (this is all you need) |
-| `AI_GUIDE.md` | Full reference guide (optional reading) |
+| `nextdocs.md` | Claude Code slash command |
+| `copilot-instructions.md` | GitHub Copilot instructions |
+| `AI_GUIDE.md` | Full reference guide (optional) |
 | `scripts/install.ps1` | Windows installer |
 | `scripts/install.sh` | Mac/Linux installer |
 

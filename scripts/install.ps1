@@ -1,5 +1,5 @@
-# NextDocs Slash Command Installer
-# Just copies nextdocs.md to .claude/commands/
+# NextDocs AI Skills Installer
+# Installs slash command for Claude Code + instructions for GitHub Copilot
 
 param(
     [string]$Target = (Get-Location).Path
@@ -7,39 +7,49 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Find source file
+# Find source files
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-$SourceFile = Join-Path (Split-Path -Parent $ScriptDir) "nextdocs.md"
-
-# Target paths
-$TargetDir = Join-Path $Target ".claude\commands"
-$TargetFile = Join-Path $TargetDir "nextdocs.md"
+$RepoRoot = Split-Path -Parent $ScriptDir
+$ClaudeSource = Join-Path $RepoRoot "nextdocs.md"
+$CopilotSource = Join-Path $RepoRoot "copilot-instructions.md"
 
 Write-Host ""
-Write-Host "NextDocs Slash Command Installer" -ForegroundColor Cyan
-Write-Host "=================================" -ForegroundColor Cyan
+Write-Host "NextDocs AI Skills Installer" -ForegroundColor Cyan
+Write-Host "============================" -ForegroundColor Cyan
 Write-Host ""
 
-# Check source exists
-if (-not (Test-Path $SourceFile)) {
-    Write-Host "Error: nextdocs.md not found" -ForegroundColor Red
-    exit 1
+# Install Claude Code slash command
+if (Test-Path $ClaudeSource) {
+    $ClaudeDir = Join-Path $Target ".claude\commands"
+    $ClaudeTarget = Join-Path $ClaudeDir "nextdocs.md"
+
+    if (-not (Test-Path $ClaudeDir)) {
+        New-Item -ItemType Directory -Path $ClaudeDir -Force | Out-Null
+    }
+
+    Write-Host "[Claude Code] Installing /nextdocs command..." -ForegroundColor Yellow
+    Copy-Item -Path $ClaudeSource -Destination $ClaudeTarget -Force
+    Write-Host "[Claude Code] Done" -ForegroundColor Green
 }
 
-# Create directory if needed
-if (-not (Test-Path $TargetDir)) {
-    Write-Host "Creating .claude/commands/..." -ForegroundColor Yellow
-    New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
+# Install GitHub Copilot instructions
+if (Test-Path $CopilotSource) {
+    $CopilotDir = Join-Path $Target ".github"
+    $CopilotTarget = Join-Path $CopilotDir "copilot-instructions.md"
+
+    if (-not (Test-Path $CopilotDir)) {
+        New-Item -ItemType Directory -Path $CopilotDir -Force | Out-Null
+    }
+
+    Write-Host "[Copilot] Installing instructions..." -ForegroundColor Yellow
+    Copy-Item -Path $CopilotSource -Destination $CopilotTarget -Force
+    Write-Host "[Copilot] Done" -ForegroundColor Green
 }
 
-# Copy file
-Write-Host "Installing slash command..." -ForegroundColor Yellow
-Copy-Item -Path $SourceFile -Destination $TargetFile -Force
-
 Write-Host ""
-Write-Host "Done!" -ForegroundColor Green
+Write-Host "Installation complete!" -ForegroundColor Green
 Write-Host ""
 Write-Host "Usage:" -ForegroundColor Cyan
-Write-Host "  1. Restart Claude Code"
-Write-Host "  2. Type: /nextdocs"
+Write-Host "  Claude Code: Type /nextdocs"
+Write-Host "  Copilot:     Ask 'help me create documentation'"
 Write-Host ""
