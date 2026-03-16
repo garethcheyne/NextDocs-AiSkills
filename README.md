@@ -8,18 +8,30 @@ AI assistant skills for creating documentation following NextDocs conventions.
 
 ---
 
-## Supported Tools
+## How It Works
 
-| Tool | How It Works |
-|------|--------------|
-| **Claude Code** | `/nextdocs` slash command |
-| **GitHub Copilot** | `.github/copilot-instructions.md` |
+| Tool | Mechanism |
+|------|-----------|
+| **Claude Code** | `/nextdocs` slash command reads `nextdocs-conventions.md` |
+| **GitHub Copilot** | Reference in `copilot-instructions.md` points to `nextdocs-conventions.md` |
+
+Both tools read the same conventions file - one source of truth.
+
+---
+
+## Safe Installation
+
+The installer **never overwrites** your existing settings:
+
+- **Claude Code**: Installs a new slash command file (doesn't touch other commands)
+- **Copilot**: Adds a small reference to existing `copilot-instructions.md` (preserves your content)
+- **Conventions**: Installed as a separate file that both tools reference
 
 ---
 
 ## Installation Options
 
-### Option 1: Global Install (Recommended)
+### Option 1: Global Install (Recommended for Claude Code)
 
 Install once, available in **all projects**.
 
@@ -37,17 +49,18 @@ t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-
 
 #### What it installs
 
-| Tool | Location | Scope |
-|------|----------|-------|
-| Claude Code | `~/.claude/commands/nextdocs.md` | All projects |
+| File | Location |
+|------|----------|
+| Slash command | `~/.claude/commands/nextdocs.md` |
+| Conventions | `~/.claude/nextdocs-conventions.md` |
 
-> **Note:** GitHub Copilot doesn't support global instructions - use per-project install for Copilot.
+> **Note:** Copilot requires per-project installation.
 
 ---
 
 ### Option 2: Per-Project Install
 
-Install in a specific project only.
+Install in a specific project (supports both Claude Code and Copilot).
 
 #### Windows (PowerShell)
 
@@ -63,10 +76,12 @@ t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-
 
 #### What it installs
 
-| Tool | Location |
+| File | Location |
 |------|----------|
-| Claude Code | `.claude/commands/nextdocs.md` |
-| GitHub Copilot | `.github/copilot-instructions.md` |
+| Slash command | `.claude/commands/nextdocs.md` |
+| Conventions (Claude) | `.claude/nextdocs-conventions.md` |
+| Conventions (Copilot) | `.github/nextdocs-conventions.md` |
+| Copilot reference | `.github/copilot-instructions.md` (appended) |
 
 ---
 
@@ -88,10 +103,11 @@ Just ask naturally:
 - "Document this API"
 
 Both assistants will:
-1. Ask where to put documentation
-2. Analyze your project
-3. Propose a documentation structure
-4. Create the files after your approval
+1. Confirm the project directory
+2. Ask where to put documentation
+3. Analyze your project
+4. Propose a documentation structure
+5. Create the files after your approval
 
 ---
 
@@ -103,26 +119,29 @@ Both assistants will:
 # Mac/Linux
 mkdir -p ~/.claude/commands
 curl -o ~/.claude/commands/nextdocs.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/nextdocs.md
+curl -o ~/.claude/nextdocs-conventions.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/nextdocs-conventions.md
 ```
 
 ```powershell
 # Windows
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\commands"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/nextdocs.md" -OutFile "$env:USERPROFILE\.claude\commands\nextdocs.md"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/nextdocs-conventions.md" -OutFile "$env:USERPROFILE\.claude\nextdocs-conventions.md"
 ```
 
-### Claude Code (Per-Project)
-
-```bash
-mkdir -p .claude/commands
-curl -o .claude/commands/nextdocs.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/nextdocs.md
-```
-
-### GitHub Copilot (Per-Project Only)
+### GitHub Copilot (Per-Project)
 
 ```bash
 mkdir -p .github
-curl -o .github/copilot-instructions.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/copilot-instructions.md
+curl -o .github/nextdocs-conventions.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/nextdocs-conventions.md
+```
+
+Then add this to your `.github/copilot-instructions.md`:
+
+```markdown
+## NextDocs Documentation
+
+When creating or modifying documentation, read and follow the conventions in `.github/nextdocs-conventions.md`.
 ```
 
 ---
@@ -132,8 +151,8 @@ curl -o .github/copilot-instructions.md https://raw.githubusercontent.com/gareth
 | File | Purpose |
 |------|---------|
 | `nextdocs.md` | Claude Code slash command |
-| `copilot-instructions.md` | GitHub Copilot instructions |
-| `AI_GUIDE.md` | Full reference guide (optional) |
+| `nextdocs-conventions.md` | Documentation conventions (shared) |
+| `copilot-instructions.md` | Small reference snippet for Copilot |
 | `scripts/install.ps1` | Windows installer |
 | `scripts/install.sh` | Mac/Linux installer |
 
@@ -146,7 +165,7 @@ curl -o .github/copilot-instructions.md https://raw.githubusercontent.com/gareth
 - **Frontmatter**: `title`, `excerpt` recommended
 - **Icons**: Lucide icon names (Rocket, Book, Code, etc.)
 
-See `AI_GUIDE.md` for complete conventions.
+See `nextdocs-conventions.md` for complete conventions.
 
 ---
 
