@@ -45,16 +45,13 @@ SkillName/
 
 #### `VERSION`
 
-A plain text file with a single line — the semantic version:
+A plain text file with a single line — the version in `yyyy.mm.dd.HHMM` format:
 
 ```
-1.0.0
+2026.03.17.2039
 ```
 
-Rules:
-- **MAJOR** — breaking changes (renamed files, changed install locations)
-- **MINOR** — new features (added conventions, new sections)
-- **PATCH** — fixes (typos, clarifications, bug fixes in scripts)
+This format ensures versions are always sortable and newer versions are always "greater than" older ones. Update the version whenever you make changes.
 
 The install and update scripts copy this file alongside the skill files so the updater can compare versions and skip unnecessary updates.
 

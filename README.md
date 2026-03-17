@@ -10,7 +10,7 @@ A collection of AI assistant skills for Claude Code and GitHub Copilot.
 
 | Skill | Version | Description |
 |-------|---------|-------------|
-| [NextDocs](./NextDocs/) | 1.0.0 | Create documentation following NextDocs conventions |
+| [NextDocs](./NextDocs/) | 2026.03.17.2039 | Create documentation following NextDocs conventions |
 
 ---
 
