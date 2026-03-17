@@ -53,6 +53,7 @@ t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-
 |------|----------|
 | Slash command | `~/.claude/commands/nextdocs.md` |
 | Conventions | `~/.claude/nextdocs-conventions.md` |
+| Version tracker | `~/.claude/nextdocs.version` |
 
 > **Note:** Copilot requires per-project installation.
 
@@ -80,6 +81,7 @@ t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-
 |------|----------|
 | Slash command | `.claude/commands/nextdocs.md` |
 | Conventions (Claude) | `.claude/nextdocs-conventions.md` |
+| Version tracker | `.claude/nextdocs.version` |
 | Conventions (Copilot) | `.github/nextdocs-conventions.md` |
 | Copilot reference | `.github/copilot-instructions.md` (appended) |
 
@@ -180,6 +182,7 @@ When creating or modifying documentation, read and follow the conventions in `.g
 
 ```
 NextDocs/
+├── VERSION                    # Skill version (for update checking)
 ├── nextdocs.md                # Claude Code slash command
 ├── nextdocs-conventions.md    # Documentation conventions (shared)
 ├── copilot-instructions.md    # Small reference snippet for Copilot
@@ -200,6 +203,49 @@ NextDocs/
 - **Icons**: Lucide icon names (Rocket, Book, Code, etc.)
 
 See `NextDocs/nextdocs-conventions.md` for complete conventions.
+
+---
+
+## Uninstall
+
+### Global
+
+**Mac/Linux/Git Bash:**
+```bash
+rm ~/.claude/commands/nextdocs.md
+rm ~/.claude/nextdocs-conventions.md
+rm ~/.claude/nextdocs.version
+```
+
+**Windows (PowerShell):**
+```powershell
+Remove-Item "$env:USERPROFILE\.claude\commands\nextdocs.md" -ErrorAction SilentlyContinue
+Remove-Item "$env:USERPROFILE\.claude\nextdocs-conventions.md" -ErrorAction SilentlyContinue
+Remove-Item "$env:USERPROFILE\.claude\nextdocs.version" -ErrorAction SilentlyContinue
+```
+
+### Per-Project
+
+```bash
+rm .claude/commands/nextdocs.md
+rm .claude/nextdocs-conventions.md
+rm .claude/nextdocs.version
+rm .github/nextdocs-conventions.md
+```
+
+Then manually remove the NextDocs block from `.github/copilot-instructions.md` — delete everything between `<!-- NEXTDOCS-AI-SKILLS-START -->` and `<!-- NEXTDOCS-AI-SKILLS-END -->`.
+
+---
+
+## Troubleshooting
+
+| Issue | Solution |
+|-------|----------|
+| `/nextdocs` command not found | Run install with `--global` flag |
+| Copilot doesn't follow conventions | Check `.github/copilot-instructions.md` has the NextDocs reference |
+| Conventions file not found | Re-run the installer for your mode (global or per-project) |
+| Update says "already up to date" | Use `--force` / `-Force` to update anyway |
+| Permission denied (Mac/Linux) | Use `bash script.sh` instead of `./script.sh` |
 
 ---
 

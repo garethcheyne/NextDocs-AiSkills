@@ -18,6 +18,7 @@ $RepoRoot = Split-Path -Parent $ScriptDir
 $ClaudeCommand = Join-Path $RepoRoot "nextdocs.md"
 $Conventions = Join-Path $RepoRoot "nextdocs-conventions.md"
 $CopilotSnippet = Join-Path $RepoRoot "copilot-instructions.md"
+$VersionFile = Join-Path $RepoRoot "VERSION"
 
 # Function to install Copilot snippet (append or update)
 function Install-CopilotSnippet {
@@ -100,6 +101,13 @@ if ($Global) {
         Write-Host "[Claude Code] Done" -ForegroundColor Green
     }
 
+    # Install version file
+    if (Test-Path $VersionFile) {
+        $Ver = (Get-Content $VersionFile -Raw).Trim()
+        Copy-Item -Path $VersionFile -Destination (Join-Path $ClaudeDir "nextdocs.version") -Force
+        Write-Host "[Version] Installed v$Ver" -ForegroundColor Green
+    }
+
     Write-Host ""
     Write-Host "[Copilot] Skipped - Copilot requires per-project installation" -ForegroundColor DarkGray
 
@@ -149,6 +157,13 @@ if ($Global) {
         $CopilotTarget = Join-Path $GitHubDir "copilot-instructions.md"
         Install-CopilotSnippet -TargetFile $CopilotTarget -SourceFile $CopilotSnippet
     }
+
+    # Install version file
+    if (Test-Path $VersionFile) {
+        $Ver = (Get-Content $VersionFile -Raw).Trim()
+        Copy-Item -Path $VersionFile -Destination (Join-Path $ClaudeDir "nextdocs.version") -Force
+        Write-Host "[Version] Installed v$Ver" -ForegroundColor Green
+    }
 }
 
 Write-Host ""
@@ -164,9 +179,11 @@ Write-Host "Installed files:" -ForegroundColor Cyan
 if ($Global) {
     Write-Host "  ~/.claude/commands/nextdocs.md     (slash command)"
     Write-Host "  ~/.claude/nextdocs-conventions.md  (conventions)"
+    Write-Host "  ~/.claude/nextdocs.version         (version tracker)"
 } else {
     Write-Host "  .claude/commands/nextdocs.md       (slash command)"
     Write-Host "  .claude/nextdocs-conventions.md    (conventions)"
+    Write-Host "  .claude/nextdocs.version           (version tracker)"
     Write-Host "  .github/nextdocs-conventions.md    (conventions)"
     Write-Host "  .github/copilot-instructions.md    (reference added)"
 }

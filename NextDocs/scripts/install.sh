@@ -38,6 +38,7 @@ REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 CLAUDE_COMMAND="$REPO_ROOT/nextdocs.md"
 CONVENTIONS="$REPO_ROOT/nextdocs-conventions.md"
 COPILOT_SNIPPET="$REPO_ROOT/copilot-instructions.md"
+VERSION_FILE="$REPO_ROOT/VERSION"
 
 # Function to install Copilot snippet (append or update)
 install_copilot_snippet() {
@@ -54,14 +55,18 @@ install_copilot_snippet() {
             # Our section exists - replace it
             echo -e "${YELLOW}[Copilot] Updating existing NextDocs reference...${NC}"
 
-            # Create temp file with content before our section
-            sed -n "1,/${MARKER_START}/{ /${MARKER_START}/!p }" "$target_file" > "$target_file.tmp"
+            # Remove old marker block, then append new content
+            local escaped_start escaped_end
+            escaped_start=$(printf '%s\n' "$MARKER_START" | sed 's/[[\.*/^$]/\\&/g')
+            escaped_end=$(printf '%s\n' "$MARKER_END" | sed 's/[[\.*/^$]/\\&/g')
+            sed "/${escaped_start}/,/${escaped_end}/d" "$target_file" > "$target_file.tmp"
 
-            # Add our new content
+            # Remove trailing blank lines from temp file
+            sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$target_file.tmp" 2>/dev/null || true
+
+            # Append new content
+            echo "" >> "$target_file.tmp"
             cat "$source_file" >> "$target_file.tmp"
-
-            # Add content after our section
-            sed -n "/${MARKER_END}/,\${ /${MARKER_END}/!p }" "$target_file" >> "$target_file.tmp"
 
             mv "$target_file.tmp" "$target_file"
             echo -e "${GREEN}[Copilot] Updated${NC}"
@@ -106,6 +111,12 @@ if [ "$GLOBAL" = true ]; then
         echo -e "${GREEN}[Claude Code] Done${NC}"
     fi
 
+    # Install version file
+    if [ -f "$VERSION_FILE" ]; then
+        cp "$VERSION_FILE" "$CLAUDE_DIR/nextdocs.version"
+        echo -e "${GREEN}[Version] Installed v$(cat "$VERSION_FILE" | tr -d '\n')${NC}"
+    fi
+
     echo ""
     echo -e "${GRAY}[Copilot] Skipped - Copilot requires per-project installation${NC}"
 
@@ -143,6 +154,12 @@ else
     if [ -f "$COPILOT_SNIPPET" ]; then
         install_copilot_snippet "$GITHUB_DIR/copilot-instructions.md" "$COPILOT_SNIPPET"
     fi
+
+    # Install version file
+    if [ -f "$VERSION_FILE" ]; then
+        cp "$VERSION_FILE" "$CLAUDE_DIR/nextdocs.version"
+        echo -e "${GREEN}[Version] Installed v$(cat "$VERSION_FILE" | tr -d '\n')${NC}"
+    fi
 fi
 
 echo ""
@@ -158,9 +175,11 @@ echo -e "${CYAN}Installed files:${NC}"
 if [ "$GLOBAL" = true ]; then
     echo "  ~/.claude/commands/nextdocs.md     (slash command)"
     echo "  ~/.claude/nextdocs-conventions.md  (conventions)"
+    echo "  ~/.claude/nextdocs.version         (version tracker)"
 else
     echo "  .claude/commands/nextdocs.md       (slash command)"
     echo "  .claude/nextdocs-conventions.md    (conventions)"
+    echo "  .claude/nextdocs.version           (version tracker)"
     echo "  .github/nextdocs-conventions.md    (conventions)"
     echo "  .github/copilot-instructions.md    (reference added)"
 fi
