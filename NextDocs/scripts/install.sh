@@ -39,36 +39,14 @@ VERSION_FILE="$REPO_ROOT/VERSION"
 # Function to update VS Code settings.json
 update_vscode_settings() {
     local target_dir="$1"
-    local settings_file="$target_dir/.vscode/settings.json"
+    local vscode_dir="$target_dir/.vscode"
+    local settings_file="$vscode_dir/settings.json"
 
-    mkdir -p "$target_dir/.vscode"
+    # Create .vscode directory if needed
+    mkdir -p "$vscode_dir"
 
-    if [ -f "$settings_file" ]; then
-        # Check if chat.agentSkillsLocations already exists
-        if grep -q "chat.agentSkillsLocations" "$settings_file"; then
-            echo -e "${GRAY}[VS Code] Skills location already configured${NC}"
-        else
-            # Add skill locations to existing settings
-            echo -e "${YELLOW}[VS Code] Adding skill locations to settings.json...${NC}"
-            # Use node/python to safely modify JSON, or sed for simple cases
-            if command -v node &> /dev/null; then
-                node -e "
-                const fs = require('fs');
-                const settings = JSON.parse(fs.readFileSync('$settings_file', 'utf8'));
-                settings['chat.agentSkillsLocations'] = {
-                    '.github/skills/**': true,
-                    '.claude/skills/**': true
-                };
-                fs.writeFileSync('$settings_file', JSON.stringify(settings, null, 4));
-                "
-                echo -e "${GREEN}[VS Code] Done${NC}"
-            else
-                echo -e "${YELLOW}[VS Code] Add this to settings.json manually:${NC}"
-                echo '  "chat.agentSkillsLocations": { ".github/skills/**": true, ".claude/skills/**": true }'
-            fi
-        fi
-    else
-        # Create new settings file
+    # Create settings.json if it doesn't exist
+    if [ ! -f "$settings_file" ]; then
         echo -e "${YELLOW}[VS Code] Creating settings.json with skill locations...${NC}"
         cat > "$settings_file" << 'EOF'
 {
@@ -79,6 +57,44 @@ update_vscode_settings() {
 }
 EOF
         echo -e "${GREEN}[VS Code] Done${NC}"
+        return
+    fi
+
+    # Check if chat.agentSkillsLocations already exists
+    if grep -q "chat.agentSkillsLocations" "$settings_file"; then
+        echo -e "${GRAY}[VS Code] Skills location already configured${NC}"
+        return
+    fi
+
+    # Add skill locations to existing settings
+    echo -e "${YELLOW}[VS Code] Adding skill locations to settings.json...${NC}"
+
+    # Use node to safely modify JSON (with proper path handling for Windows/Git Bash)
+    if command -v node &> /dev/null; then
+        # Read current content and pass as stdin to avoid path issues
+        local current_content
+        current_content=$(cat "$settings_file")
+
+        local new_content
+        new_content=$(node -e "
+            const settings = JSON.parse(process.argv[1]);
+            settings['chat.agentSkillsLocations'] = {
+                '.github/skills/**': true,
+                '.claude/skills/**': true
+            };
+            console.log(JSON.stringify(settings, null, 4));
+        " "$current_content" 2>/dev/null)
+
+        if [ -n "$new_content" ]; then
+            echo "$new_content" > "$settings_file"
+            echo -e "${GREEN}[VS Code] Done${NC}"
+        else
+            echo -e "${YELLOW}[VS Code] Add this to settings.json manually:${NC}"
+            echo '  "chat.agentSkillsLocations": { ".github/skills/**": true, ".claude/skills/**": true }'
+        fi
+    else
+        echo -e "${YELLOW}[VS Code] Add this to settings.json manually:${NC}"
+        echo '  "chat.agentSkillsLocations": { ".github/skills/**": true, ".claude/skills/**": true }'
     fi
 }
 
