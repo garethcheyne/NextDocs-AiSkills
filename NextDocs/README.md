@@ -31,38 +31,9 @@ The installer **never overwrites** your existing settings:
 
 ## Installation
 
-### Global Install (Claude Code Only)
+### Per-Project Install (Recommended for Copilot)
 
-Install once, available in **all projects**.
-
-**Windows (PowerShell):**
-
-```powershell
-$t="$env:TEMP\nd-$(Get-Random)"; git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" $t; & "$t\NextDocs\scripts\install.ps1" -Global; Remove-Item -Recurse -Force $t
-```
-
-**Mac/Linux/Git Bash:**
-
-```bash
-t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" "$t" && bash "$t/NextDocs/scripts/install.sh" --global && rm -rf "$t"
-```
-
-**What it installs:**
-
-| File | Location |
-|------|----------|
-| Slash command | `~/.claude/commands/nextdocs.md` |
-| Conventions | `~/.claude/nextdocs-conventions.md` |
-| Skill | `~/.claude/skills/nextdocs/SKILL.md` |
-| Version tracker | `~/.claude/nextdocs.version` |
-
-> **Note:** Copilot skills require per-project installation.
-
----
-
-### Per-Project Install (Recommended)
-
-Install in a specific project (supports both Claude Code and Copilot).
+Install in a specific project. **This is the only way to get Copilot support.**
 
 **Windows (PowerShell):**
 
@@ -86,6 +57,33 @@ t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-
 | Copilot skill | `.github/skills/nextdocs/SKILL.md` |
 | VS Code settings | `.vscode/settings.json` (skill locations) |
 | Version tracker | `.claude/nextdocs.version` |
+
+---
+
+### Global Install (Claude Code Only)
+
+Install once, available in **all projects**. **Does NOT install Copilot skills.**
+
+**Windows (PowerShell):**
+
+```powershell
+$t="$env:TEMP\nd-$(Get-Random)"; git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" $t; & "$t\NextDocs\scripts\install.ps1" -Global; Remove-Item -Recurse -Force $t
+```
+
+**Mac/Linux/Git Bash:**
+
+```bash
+t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-AiSkills" "$t" && bash "$t/NextDocs/scripts/install.sh" --global && rm -rf "$t"
+```
+
+**What it installs:**
+
+| File | Location |
+|------|----------|
+| Slash command | `~/.claude/commands/nextdocs.md` |
+| Conventions | `~/.claude/nextdocs-conventions.md` |
+| Skill | `~/.claude/skills/nextdocs/SKILL.md` |
+| Version tracker | `~/.claude/nextdocs.version` |
 
 ---
 
