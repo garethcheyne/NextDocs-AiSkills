@@ -1,5 +1,5 @@
 # NextDocs AI Skills Installer
-# Installs slash command for Claude Code + instructions for GitHub Copilot
+# Installs skills for Claude Code and GitHub Copilot
 
 param(
     [switch]$Global,
@@ -8,62 +8,54 @@ param(
 
 $ErrorActionPreference = "Stop"
 
-# Markers for Copilot instructions
-$MarkerStart = "<!-- NEXTDOCS-AI-SKILLS-START -->"
-$MarkerEnd = "<!-- NEXTDOCS-AI-SKILLS-END -->"
-
 # Find source files
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $RepoRoot = Split-Path -Parent $ScriptDir
 $ClaudeCommand = Join-Path $RepoRoot "nextdocs.md"
 $Conventions = Join-Path $RepoRoot "nextdocs-conventions.md"
-$CopilotSnippet = Join-Path $RepoRoot "copilot-instructions.md"
+$SkillDir = Join-Path $RepoRoot "skills\nextdocs"
 $VersionFile = Join-Path $RepoRoot "VERSION"
 
-# Function to install Copilot snippet (append or update)
-function Install-CopilotSnippet {
-    param(
-        [string]$TargetFile,
-        [string]$SourceFile
-    )
+# Function to update VS Code settings.json
+function Update-VSCodeSettings {
+    param([string]$TargetDir)
 
-    $TargetDir = Split-Path -Parent $TargetFile
+    $VSCodeDir = Join-Path $TargetDir ".vscode"
+    $SettingsFile = Join-Path $VSCodeDir "settings.json"
 
-    if (-not (Test-Path $TargetDir)) {
-        New-Item -ItemType Directory -Path $TargetDir -Force | Out-Null
+    if (-not (Test-Path $VSCodeDir)) {
+        New-Item -ItemType Directory -Path $VSCodeDir -Force | Out-Null
     }
 
-    $SourceContent = Get-Content -Path $SourceFile -Raw
-
-    if (Test-Path $TargetFile) {
-        $ExistingContent = Get-Content -Path $TargetFile -Raw
-
-        if ($ExistingContent -match [regex]::Escape($MarkerStart)) {
-            # Our section exists - replace it
-            Write-Host "[Copilot] Updating existing NextDocs reference..." -ForegroundColor Yellow
-
-            # Use regex to replace the section between markers
-            $Pattern = "(?s)$([regex]::Escape($MarkerStart)).*?$([regex]::Escape($MarkerEnd))"
-            $NewContent = $ExistingContent -replace $Pattern, $SourceContent.TrimEnd()
-
-            Set-Content -Path $TargetFile -Value $NewContent -NoNewline
-            Write-Host "[Copilot] Updated" -ForegroundColor Green
+    if (Test-Path $SettingsFile) {
+        $Content = Get-Content -Path $SettingsFile -Raw
+        if ($Content -match "chat\.agentSkillsLocations") {
+            Write-Host "[VS Code] Skills location already configured" -ForegroundColor DarkGray
+        } else {
+            Write-Host "[VS Code] Adding skill locations to settings.json..." -ForegroundColor Yellow
+            try {
+                $Settings = $Content | ConvertFrom-Json
+                $Settings | Add-Member -NotePropertyName "chat.agentSkillsLocations" -NotePropertyValue @{
+                    ".github/skills/**" = $true
+                    ".claude/skills/**" = $true
+                } -Force
+                $Settings | ConvertTo-Json -Depth 10 | Set-Content -Path $SettingsFile
+                Write-Host "[VS Code] Done" -ForegroundColor Green
+            } catch {
+                Write-Host "[VS Code] Add this to settings.json manually:" -ForegroundColor Yellow
+                Write-Host '  "chat.agentSkillsLocations": { ".github/skills/**": true, ".claude/skills/**": true }'
+            }
         }
-        else {
-            # File exists but doesn't have our section - append
-            Write-Host "[Copilot] Adding NextDocs reference to existing file..." -ForegroundColor Yellow
-
-            $CombinedContent = $ExistingContent.TrimEnd() + "`n`n" + $SourceContent
-            Set-Content -Path $TargetFile -Value $CombinedContent -NoNewline
-
-            Write-Host "[Copilot] Added" -ForegroundColor Green
+    } else {
+        Write-Host "[VS Code] Creating settings.json with skill locations..." -ForegroundColor Yellow
+        $NewSettings = @{
+            "chat.agentSkillsLocations" = @{
+                ".github/skills/**" = $true
+                ".claude/skills/**" = $true
+            }
         }
-    }
-    else {
-        # File doesn't exist - create it
-        Write-Host "[Copilot] Creating copilot-instructions.md..." -ForegroundColor Yellow
-        Copy-Item -Path $SourceFile -Destination $TargetFile -Force
-        Write-Host "[Copilot] Done" -ForegroundColor Green
+        $NewSettings | ConvertTo-Json -Depth 10 | Set-Content -Path $SettingsFile
+        Write-Host "[VS Code] Done" -ForegroundColor Green
     }
 }
 
@@ -101,6 +93,18 @@ if ($Global) {
         Write-Host "[Claude Code] Done" -ForegroundColor Green
     }
 
+    # Install Claude skills
+    if (Test-Path $SkillDir) {
+        $SkillsTarget = Join-Path $ClaudeDir "skills\nextdocs"
+        if (-not (Test-Path $SkillsTarget)) {
+            New-Item -ItemType Directory -Path $SkillsTarget -Force | Out-Null
+        }
+
+        Write-Host "[Claude Code] Installing skill..." -ForegroundColor Yellow
+        Copy-Item -Path (Join-Path $SkillDir "*") -Destination $SkillsTarget -Recurse -Force
+        Write-Host "[Claude Code] Done" -ForegroundColor Green
+    }
+
     # Install version file
     if (Test-Path $VersionFile) {
         $Ver = (Get-Content $VersionFile -Raw).Trim()
@@ -109,7 +113,7 @@ if ($Global) {
     }
 
     Write-Host ""
-    Write-Host "[Copilot] Skipped - Copilot requires per-project installation" -ForegroundColor DarkGray
+    Write-Host "[Copilot] Skipped - Copilot skills require per-project installation" -ForegroundColor DarkGray
 
 } else {
     Write-Host "Mode: Per-project" -ForegroundColor Magenta
@@ -141,22 +145,32 @@ if ($Global) {
         Write-Host "[Claude Code] Done" -ForegroundColor Green
     }
 
-    # Install conventions file for Copilot
-    if (Test-Path $Conventions) {
-        if (-not (Test-Path $GitHubDir)) {
-            New-Item -ItemType Directory -Path $GitHubDir -Force | Out-Null
+    # Install Claude skill
+    if (Test-Path $SkillDir) {
+        $ClaudeSkillTarget = Join-Path $ClaudeDir "skills\nextdocs"
+        if (-not (Test-Path $ClaudeSkillTarget)) {
+            New-Item -ItemType Directory -Path $ClaudeSkillTarget -Force | Out-Null
         }
 
-        Write-Host "[Copilot] Installing conventions..." -ForegroundColor Yellow
-        Copy-Item -Path $Conventions -Destination (Join-Path $GitHubDir "nextdocs-conventions.md") -Force
+        Write-Host "[Claude Code] Installing skill..." -ForegroundColor Yellow
+        Copy-Item -Path (Join-Path $SkillDir "*") -Destination $ClaudeSkillTarget -Recurse -Force
+        Write-Host "[Claude Code] Done" -ForegroundColor Green
+    }
+
+    # Install Copilot skill (GitHub Copilot format)
+    if (Test-Path $SkillDir) {
+        $CopilotSkillTarget = Join-Path $GitHubDir "skills\nextdocs"
+        if (-not (Test-Path $CopilotSkillTarget)) {
+            New-Item -ItemType Directory -Path $CopilotSkillTarget -Force | Out-Null
+        }
+
+        Write-Host "[Copilot] Installing skill..." -ForegroundColor Yellow
+        Copy-Item -Path (Join-Path $SkillDir "*") -Destination $CopilotSkillTarget -Recurse -Force
         Write-Host "[Copilot] Done" -ForegroundColor Green
     }
 
-    # Install Copilot snippet (smart merge)
-    if (Test-Path $CopilotSnippet) {
-        $CopilotTarget = Join-Path $GitHubDir "copilot-instructions.md"
-        Install-CopilotSnippet -TargetFile $CopilotTarget -SourceFile $CopilotSnippet
-    }
+    # Update VS Code settings
+    Update-VSCodeSettings -TargetDir $Target
 
     # Install version file
     if (Test-Path $VersionFile) {
@@ -172,19 +186,20 @@ Write-Host ""
 Write-Host "Usage:" -ForegroundColor Cyan
 Write-Host "  Claude Code: Type /nextdocs"
 if (-not $Global) {
-    Write-Host "  Copilot:     Ask 'help me create documentation'"
+    Write-Host "  Copilot:     Type /nextdocs or ask 'help me create documentation'"
 }
 Write-Host ""
 Write-Host "Installed files:" -ForegroundColor Cyan
 if ($Global) {
-    Write-Host "  ~/.claude/commands/nextdocs.md     (slash command)"
-    Write-Host "  ~/.claude/nextdocs-conventions.md  (conventions)"
-    Write-Host "  ~/.claude/nextdocs.version         (version tracker)"
+    Write-Host "  ~/.claude/commands/nextdocs.md       (slash command)"
+    Write-Host "  ~/.claude/nextdocs-conventions.md    (conventions)"
+    Write-Host "  ~/.claude/skills/nextdocs/SKILL.md   (skill definition)"
+    Write-Host "  ~/.claude/nextdocs.version           (version tracker)"
 } else {
-    Write-Host "  .claude/commands/nextdocs.md       (slash command)"
-    Write-Host "  .claude/nextdocs-conventions.md    (conventions)"
-    Write-Host "  .claude/nextdocs.version           (version tracker)"
-    Write-Host "  .github/nextdocs-conventions.md    (conventions)"
-    Write-Host "  .github/copilot-instructions.md    (reference added)"
+    Write-Host "  .claude/commands/nextdocs.md         (slash command)"
+    Write-Host "  .claude/nextdocs-conventions.md      (conventions)"
+    Write-Host "  .claude/skills/nextdocs/SKILL.md     (Claude skill)"
+    Write-Host "  .github/skills/nextdocs/SKILL.md     (Copilot skill)"
+    Write-Host "  .vscode/settings.json                (skills enabled)"
 }
 Write-Host ""

@@ -12,10 +12,10 @@ AI assistant skills for creating documentation following NextDocs conventions.
 
 | Tool | Mechanism |
 |------|-----------|
-| **Claude Code** | `/nextdocs` slash command reads `nextdocs-conventions.md` |
-| **GitHub Copilot** | Reference in `copilot-instructions.md` points to `nextdocs-conventions.md` |
+| **Claude Code** | Skill in `.claude/skills/nextdocs/` + `/nextdocs` slash command |
+| **GitHub Copilot** | Skill in `.github/skills/nextdocs/` (VS Code Copilot Chat) |
 
-Both tools read the same conventions file - one source of truth.
+Both tools use the same skill definition - one source of truth.
 
 ---
 
@@ -23,15 +23,15 @@ Both tools read the same conventions file - one source of truth.
 
 The installer **never overwrites** your existing settings:
 
-- **Claude Code**: Installs a new slash command file (doesn't touch other commands)
-- **Copilot**: Adds a small reference to existing `copilot-instructions.md` (preserves your content)
-- **Conventions**: Installed as a separate file that both tools reference
+- **Skills**: Installed to dedicated directories (doesn't touch other skills)
+- **VS Code**: Adds skill locations to `settings.json` (preserves your settings)
+- **Claude Code**: Installs slash command (doesn't touch other commands)
 
 ---
 
 ## Installation
 
-### Global Install (Recommended for Claude Code)
+### Global Install (Claude Code Only)
 
 Install once, available in **all projects**.
 
@@ -53,13 +53,14 @@ t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-
 |------|----------|
 | Slash command | `~/.claude/commands/nextdocs.md` |
 | Conventions | `~/.claude/nextdocs-conventions.md` |
+| Skill | `~/.claude/skills/nextdocs/SKILL.md` |
 | Version tracker | `~/.claude/nextdocs.version` |
 
-> **Note:** Copilot requires per-project installation.
+> **Note:** Copilot skills require per-project installation.
 
 ---
 
-### Per-Project Install
+### Per-Project Install (Recommended)
 
 Install in a specific project (supports both Claude Code and Copilot).
 
@@ -80,10 +81,11 @@ t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-
 | File | Location |
 |------|----------|
 | Slash command | `.claude/commands/nextdocs.md` |
-| Conventions (Claude) | `.claude/nextdocs-conventions.md` |
+| Conventions | `.claude/nextdocs-conventions.md` |
+| Claude skill | `.claude/skills/nextdocs/SKILL.md` |
+| Copilot skill | `.github/skills/nextdocs/SKILL.md` |
+| VS Code settings | `.vscode/settings.json` (skill locations) |
 | Version tracker | `.claude/nextdocs.version` |
-| Conventions (Copilot) | `.github/nextdocs-conventions.md` |
-| Copilot reference | `.github/copilot-instructions.md` (appended) |
 
 ---
 
@@ -91,18 +93,24 @@ t=$(mktemp -d) && git clone --depth 1 "https://github.com/garethcheyne/NextDocs-
 
 ### Claude Code
 
-Type the slash command:
+Use the slash command or invoke the skill:
 
 ```
 /nextdocs
 ```
 
-### GitHub Copilot
+Or use the skill directly:
+- Type `/nextdocs init` to initialize documentation
+- Type `/nextdocs review` to review existing docs
+- Type `/nextdocs create page` to create a new page
 
-Just ask naturally:
+### GitHub Copilot (VS Code)
+
+In Copilot Chat, just ask naturally:
 - "Help me create documentation for this project"
 - "Set up NextDocs documentation"
 - "Document this API"
+- "@workspace /nextdocs init"
 
 Both assistants will:
 1. Confirm the project directory
@@ -110,6 +118,23 @@ Both assistants will:
 3. Analyze your project
 4. Propose a documentation structure
 5. Create the files after your approval
+
+---
+
+## VS Code Configuration
+
+The installer automatically adds skill locations to `.vscode/settings.json`:
+
+```json
+{
+  "chat.agentSkillsLocations": {
+    ".github/skills/**": true,
+    ".claude/skills/**": true
+  }
+}
+```
+
+This enables both Copilot and Claude Code to discover skills in your project.
 
 ---
 
@@ -149,31 +174,36 @@ $t="$env:TEMP\nd-$(Get-Random)"; git clone --depth 1 "https://github.com/garethc
 
 ```bash
 # Mac/Linux
-mkdir -p ~/.claude/commands
+mkdir -p ~/.claude/commands ~/.claude/skills/nextdocs
 curl -o ~/.claude/commands/nextdocs.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/NextDocs/nextdocs.md
 curl -o ~/.claude/nextdocs-conventions.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/NextDocs/nextdocs-conventions.md
+curl -o ~/.claude/skills/nextdocs/SKILL.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/NextDocs/skills/nextdocs/SKILL.md
 ```
 
 ```powershell
 # Windows
 New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\commands"
+New-Item -ItemType Directory -Force -Path "$env:USERPROFILE\.claude\skills\nextdocs"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/NextDocs/nextdocs.md" -OutFile "$env:USERPROFILE\.claude\commands\nextdocs.md"
 Invoke-WebRequest -Uri "https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/NextDocs/nextdocs-conventions.md" -OutFile "$env:USERPROFILE\.claude\nextdocs-conventions.md"
+Invoke-WebRequest -Uri "https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/NextDocs/skills/nextdocs/SKILL.md" -OutFile "$env:USERPROFILE\.claude\skills\nextdocs\SKILL.md"
 ```
 
 ### GitHub Copilot (Per-Project)
 
 ```bash
-mkdir -p .github
-curl -o .github/nextdocs-conventions.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/NextDocs/nextdocs-conventions.md
+mkdir -p .github/skills/nextdocs
+curl -o .github/skills/nextdocs/SKILL.md https://raw.githubusercontent.com/garethcheyne/NextDocs-AiSkills/main/NextDocs/skills/nextdocs/SKILL.md
 ```
 
-Then add this to your `.github/copilot-instructions.md`:
+Then add to your `.vscode/settings.json`:
 
-```markdown
-## NextDocs Documentation
-
-When creating or modifying documentation, read and follow the conventions in `.github/nextdocs-conventions.md`.
+```json
+{
+  "chat.agentSkillsLocations": {
+    ".github/skills/**": true
+  }
+}
 ```
 
 ---
@@ -182,15 +212,17 @@ When creating or modifying documentation, read and follow the conventions in `.g
 
 ```
 NextDocs/
-├── VERSION                    # Skill version (for update checking)
-├── nextdocs.md                # Claude Code slash command
-├── nextdocs-conventions.md    # Documentation conventions (shared)
-├── copilot-instructions.md    # Small reference snippet for Copilot
+├── VERSION                      # Skill version (for update checking)
+├── nextdocs.md                  # Claude Code slash command
+├── nextdocs-conventions.md      # Documentation conventions (for slash command)
+├── skills/
+│   └── nextdocs/
+│       └── SKILL.md             # Complete skill definition (Claude + Copilot)
 └── scripts/
-    ├── install.ps1            # Windows installer
-    ├── install.sh             # Mac/Linux installer
-    ├── update.ps1             # Windows updater
-    └── update.sh              # Mac/Linux updater
+    ├── install.ps1              # Windows installer
+    ├── install.sh               # Mac/Linux installer
+    ├── update.ps1               # Windows updater
+    └── update.sh                # Mac/Linux updater
 ```
 
 ---
@@ -202,7 +234,7 @@ NextDocs/
 - **Frontmatter**: `title`, `excerpt` recommended
 - **Icons**: Lucide icon names (Rocket, Book, Code, etc.)
 
-See `NextDocs/nextdocs-conventions.md` for complete conventions.
+See `NextDocs/skills/nextdocs/SKILL.md` for complete conventions including blogs, authors, API specs, custom blocks, and more.
 
 ---
 
@@ -215,6 +247,7 @@ See `NextDocs/nextdocs-conventions.md` for complete conventions.
 rm ~/.claude/commands/nextdocs.md
 rm ~/.claude/nextdocs-conventions.md
 rm ~/.claude/nextdocs.version
+rm -rf ~/.claude/skills/nextdocs
 ```
 
 **Windows (PowerShell):**
@@ -222,18 +255,20 @@ rm ~/.claude/nextdocs.version
 Remove-Item "$env:USERPROFILE\.claude\commands\nextdocs.md" -ErrorAction SilentlyContinue
 Remove-Item "$env:USERPROFILE\.claude\nextdocs-conventions.md" -ErrorAction SilentlyContinue
 Remove-Item "$env:USERPROFILE\.claude\nextdocs.version" -ErrorAction SilentlyContinue
+Remove-Item -Recurse -Force "$env:USERPROFILE\.claude\skills\nextdocs" -ErrorAction SilentlyContinue
 ```
 
 ### Per-Project
 
 ```bash
-rm .claude/commands/nextdocs.md
-rm .claude/nextdocs-conventions.md
-rm .claude/nextdocs.version
-rm .github/nextdocs-conventions.md
+rm -rf .claude/commands/nextdocs.md
+rm -rf .claude/nextdocs-conventions.md
+rm -rf .claude/nextdocs.version
+rm -rf .claude/skills/nextdocs
+rm -rf .github/skills/nextdocs
 ```
 
-Then manually remove the NextDocs block from `.github/copilot-instructions.md` — delete everything between `<!-- NEXTDOCS-AI-SKILLS-START -->` and `<!-- NEXTDOCS-AI-SKILLS-END -->`.
+Then optionally remove the `chat.agentSkillsLocations` entries from `.vscode/settings.json`.
 
 ---
 
@@ -242,8 +277,8 @@ Then manually remove the NextDocs block from `.github/copilot-instructions.md` �
 | Issue | Solution |
 |-------|----------|
 | `/nextdocs` command not found | Run install with `--global` flag |
-| Copilot doesn't follow conventions | Check `.github/copilot-instructions.md` has the NextDocs reference |
-| Conventions file not found | Re-run the installer for your mode (global or per-project) |
+| Copilot doesn't see the skill | Check `.vscode/settings.json` has `chat.agentSkillsLocations` |
+| Skill not found | Re-run the installer for your mode (global or per-project) |
 | Update says "already up to date" | Use `--force` / `-Force` to update anyway |
 | Permission denied (Mac/Linux) | Use `bash script.sh` instead of `./script.sh` |
 
@@ -254,3 +289,4 @@ Then manually remove the NextDocs block from `.github/copilot-instructions.md` �
 - [GitHub](https://github.com/garethcheyne/NextDocs-AiSkills)
 - [Azure DevOps](https://dev.azure.com/harveynorman/HN%20Commercial%20Division/_git/NextDocs-AiSkills)
 - [Lucide Icons](https://lucide.dev/icons)
+- [GitHub Copilot Skills Docs](https://docs.github.com/en/copilot/customizing-copilot/adding-repository-custom-instructions-for-github-copilot)

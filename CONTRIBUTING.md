@@ -23,6 +23,11 @@ AiSkills/
 
 ---
 
+## Skill Reference Material for this guide is based on 
+https://smartscope.blog/en/generative-ai/github-copilot/github-copilot-skills-guide/#configuration-in-settingsjson
+
+https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/create-skills
+
 ## Skill Directory Structure
 
 Every skill **must** follow this layout:

@@ -1,6 +1,6 @@
 #!/bin/bash
 # NextDocs AI Skills Installer
-# Installs slash command for Claude Code + instructions for GitHub Copilot
+# Installs skills for Claude Code and GitHub Copilot
 
 set -e
 
@@ -10,10 +10,6 @@ CYAN='\033[0;36m'
 MAGENTA='\033[0;35m'
 GRAY='\033[0;90m'
 NC='\033[0m'
-
-# Markers for Copilot instructions
-MARKER_START="<!-- NEXTDOCS-AI-SKILLS-START -->"
-MARKER_END="<!-- NEXTDOCS-AI-SKILLS-END -->"
 
 # Parse arguments
 GLOBAL=false
@@ -37,51 +33,52 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 CLAUDE_COMMAND="$REPO_ROOT/nextdocs.md"
 CONVENTIONS="$REPO_ROOT/nextdocs-conventions.md"
-COPILOT_SNIPPET="$REPO_ROOT/copilot-instructions.md"
+SKILL_DIR="$REPO_ROOT/skills/nextdocs"
 VERSION_FILE="$REPO_ROOT/VERSION"
 
-# Function to install Copilot snippet (append or update)
-install_copilot_snippet() {
-    local target_file="$1"
-    local source_file="$2"
-    local target_dir
-    target_dir="$(dirname "$target_file")"
+# Function to update VS Code settings.json
+update_vscode_settings() {
+    local target_dir="$1"
+    local settings_file="$target_dir/.vscode/settings.json"
 
-    mkdir -p "$target_dir"
+    mkdir -p "$target_dir/.vscode"
 
-    if [ -f "$target_file" ]; then
-        # File exists - check for our markers
-        if grep -q "$MARKER_START" "$target_file"; then
-            # Our section exists - replace it
-            echo -e "${YELLOW}[Copilot] Updating existing NextDocs reference...${NC}"
-
-            # Remove old marker block, then append new content
-            local escaped_start escaped_end
-            escaped_start=$(printf '%s\n' "$MARKER_START" | sed 's/[[\.*/^$]/\\&/g')
-            escaped_end=$(printf '%s\n' "$MARKER_END" | sed 's/[[\.*/^$]/\\&/g')
-            sed "/${escaped_start}/,/${escaped_end}/d" "$target_file" > "$target_file.tmp"
-
-            # Remove trailing blank lines from temp file
-            sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' "$target_file.tmp" 2>/dev/null || true
-
-            # Append new content
-            echo "" >> "$target_file.tmp"
-            cat "$source_file" >> "$target_file.tmp"
-
-            mv "$target_file.tmp" "$target_file"
-            echo -e "${GREEN}[Copilot] Updated${NC}"
+    if [ -f "$settings_file" ]; then
+        # Check if chat.agentSkillsLocations already exists
+        if grep -q "chat.agentSkillsLocations" "$settings_file"; then
+            echo -e "${GRAY}[VS Code] Skills location already configured${NC}"
         else
-            # File exists but doesn't have our section - append
-            echo -e "${YELLOW}[Copilot] Adding NextDocs reference to existing file...${NC}"
-            echo "" >> "$target_file"
-            cat "$source_file" >> "$target_file"
-            echo -e "${GREEN}[Copilot] Added${NC}"
+            # Add skill locations to existing settings
+            echo -e "${YELLOW}[VS Code] Adding skill locations to settings.json...${NC}"
+            # Use node/python to safely modify JSON, or sed for simple cases
+            if command -v node &> /dev/null; then
+                node -e "
+                const fs = require('fs');
+                const settings = JSON.parse(fs.readFileSync('$settings_file', 'utf8'));
+                settings['chat.agentSkillsLocations'] = {
+                    '.github/skills/**': true,
+                    '.claude/skills/**': true
+                };
+                fs.writeFileSync('$settings_file', JSON.stringify(settings, null, 4));
+                "
+                echo -e "${GREEN}[VS Code] Done${NC}"
+            else
+                echo -e "${YELLOW}[VS Code] Add this to settings.json manually:${NC}"
+                echo '  "chat.agentSkillsLocations": { ".github/skills/**": true, ".claude/skills/**": true }'
+            fi
         fi
     else
-        # File doesn't exist - create it
-        echo -e "${YELLOW}[Copilot] Creating copilot-instructions.md...${NC}"
-        cp "$source_file" "$target_file"
-        echo -e "${GREEN}[Copilot] Done${NC}"
+        # Create new settings file
+        echo -e "${YELLOW}[VS Code] Creating settings.json with skill locations...${NC}"
+        cat > "$settings_file" << 'EOF'
+{
+    "chat.agentSkillsLocations": {
+        ".github/skills/**": true,
+        ".claude/skills/**": true
+    }
+}
+EOF
+        echo -e "${GREEN}[VS Code] Done${NC}"
     fi
 }
 
@@ -111,6 +108,14 @@ if [ "$GLOBAL" = true ]; then
         echo -e "${GREEN}[Claude Code] Done${NC}"
     fi
 
+    # Install Claude skills
+    if [ -d "$SKILL_DIR" ]; then
+        mkdir -p "$CLAUDE_DIR/skills/nextdocs"
+        echo -e "${YELLOW}[Claude Code] Installing skill...${NC}"
+        cp -r "$SKILL_DIR/"* "$CLAUDE_DIR/skills/nextdocs/"
+        echo -e "${GREEN}[Claude Code] Done${NC}"
+    fi
+
     # Install version file
     if [ -f "$VERSION_FILE" ]; then
         cp "$VERSION_FILE" "$CLAUDE_DIR/nextdocs.version"
@@ -118,7 +123,7 @@ if [ "$GLOBAL" = true ]; then
     fi
 
     echo ""
-    echo -e "${GRAY}[Copilot] Skipped - Copilot requires per-project installation${NC}"
+    echo -e "${GRAY}[Copilot] Skipped - Copilot skills require per-project installation${NC}"
 
 else
     echo -e "${MAGENTA}Mode: Per-project${NC}"
@@ -142,18 +147,24 @@ else
         echo -e "${GREEN}[Claude Code] Done${NC}"
     fi
 
-    # Install conventions file for Copilot
-    if [ -f "$CONVENTIONS" ]; then
-        mkdir -p "$GITHUB_DIR"
-        echo -e "${YELLOW}[Copilot] Installing conventions...${NC}"
-        cp "$CONVENTIONS" "$GITHUB_DIR/nextdocs-conventions.md"
+    # Install Claude skill
+    if [ -d "$SKILL_DIR" ]; then
+        mkdir -p "$CLAUDE_DIR/skills/nextdocs"
+        echo -e "${YELLOW}[Claude Code] Installing skill...${NC}"
+        cp -r "$SKILL_DIR/"* "$CLAUDE_DIR/skills/nextdocs/"
+        echo -e "${GREEN}[Claude Code] Done${NC}"
+    fi
+
+    # Install Copilot skill (GitHub Copilot format)
+    if [ -d "$SKILL_DIR" ]; then
+        mkdir -p "$GITHUB_DIR/skills/nextdocs"
+        echo -e "${YELLOW}[Copilot] Installing skill...${NC}"
+        cp -r "$SKILL_DIR/"* "$GITHUB_DIR/skills/nextdocs/"
         echo -e "${GREEN}[Copilot] Done${NC}"
     fi
 
-    # Install Copilot snippet (smart merge)
-    if [ -f "$COPILOT_SNIPPET" ]; then
-        install_copilot_snippet "$GITHUB_DIR/copilot-instructions.md" "$COPILOT_SNIPPET"
-    fi
+    # Update VS Code settings
+    update_vscode_settings "$TARGET"
 
     # Install version file
     if [ -f "$VERSION_FILE" ]; then
@@ -168,19 +179,20 @@ echo ""
 echo -e "${CYAN}Usage:${NC}"
 echo "  Claude Code: Type /nextdocs"
 if [ "$GLOBAL" = false ]; then
-    echo "  Copilot:     Ask 'help me create documentation'"
+    echo "  Copilot:     Type /nextdocs or ask 'help me create documentation'"
 fi
 echo ""
 echo -e "${CYAN}Installed files:${NC}"
 if [ "$GLOBAL" = true ]; then
-    echo "  ~/.claude/commands/nextdocs.md     (slash command)"
-    echo "  ~/.claude/nextdocs-conventions.md  (conventions)"
-    echo "  ~/.claude/nextdocs.version         (version tracker)"
+    echo "  ~/.claude/commands/nextdocs.md       (slash command)"
+    echo "  ~/.claude/nextdocs-conventions.md    (conventions)"
+    echo "  ~/.claude/skills/nextdocs/SKILL.md   (skill definition)"
+    echo "  ~/.claude/nextdocs.version           (version tracker)"
 else
-    echo "  .claude/commands/nextdocs.md       (slash command)"
-    echo "  .claude/nextdocs-conventions.md    (conventions)"
-    echo "  .claude/nextdocs.version           (version tracker)"
-    echo "  .github/nextdocs-conventions.md    (conventions)"
-    echo "  .github/copilot-instructions.md    (reference added)"
+    echo "  .claude/commands/nextdocs.md         (slash command)"
+    echo "  .claude/nextdocs-conventions.md      (conventions)"
+    echo "  .claude/skills/nextdocs/SKILL.md     (Claude skill)"
+    echo "  .github/skills/nextdocs/SKILL.md     (Copilot skill)"
+    echo "  .vscode/settings.json                (skills enabled)"
 fi
 echo ""
